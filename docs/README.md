@@ -1,0 +1,20 @@
+# Documentação
+- Classes:
+    - Arquivos
+    - Servidor
+    - Cliente
+- Arquivos:
+    - Leitura do arquivo
+    - Particionamento do arquivo
+    - Montagem do arquivo
+    - Validação do arquivo -> md5sum ou shasum
+- Servidor:
+    - Recebimento de dados
+    - Envio de confirmação (ACK = No de sequência + 1)
+    - Descarte de dado (Caso ocorra erro no CRC)
+    - Controle de número de sequência (Caso ocorra erro -> enviar    ACK do último pacote recebido)
+- Cliente:
+    - Slow start -> Crescimento exponencial de envio de dados
+    - Reiniciar slow start:
+        - Fast retransmit -> 3 ACKs duplicados -> retransmitir
+        - Controle de timeout
