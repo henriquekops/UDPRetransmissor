@@ -9,7 +9,6 @@ public class Client {
         /*
         Constructor
          */
-        byte[][] messages = divideMessage("mensagem");
     }
 
     public void slowStart() {
@@ -28,21 +27,5 @@ public class Client {
         /*
         This method implements timeout control
          */
-    }
-
-    public byte[][] divideMessage(String message){
-
-        int size = (int) Math.ceil(message.length() / 508.0);
-        byte[][] messagesByte = new byte[size][512];
-
-        for (int i = 0; i < size; i++) {
-            String aux = String.format("%04d", i);
-            aux += message.substring(i * 508, Math.min((i + 1) * 508, message.length()));
-
-            byte[] arr = aux.getBytes();
-            System.arraycopy(arr, 0, messagesByte[0], 0, arr.length);
-        }
-
-        return messagesByte;
     }
 }
