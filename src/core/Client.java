@@ -9,7 +9,6 @@ public class Client {
         /*
         Constructor
          */
-        byte[][] messages = divideMessage("mensagem");
     }
 
     public void slowStart() {
@@ -29,7 +28,7 @@ public class Client {
         This method implements timeout control
          */
     }
-
+    
     public byte[][] divideMessage(String message){
 
         int size = (int) Math.ceil(message.length() / 508.0);
