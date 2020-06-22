@@ -33,13 +33,35 @@ public class FileHandler {
         byte[][] messagesByte = new byte[size][512];
         byte[] fileContent = Files.readAllBytes(f.toPath());
         for (int i = 0; i < size; i++) {
-            byte[] aux = String.format("%04d", i).getBytes();
+            byte[] aux = (String.format("%04d", i) + String.format("%04d", size) + (getFileExtension(f))).getBytes();
             byte[] aux2 = Arrays.copyOfRange(fileContent,i * 508, Math.min((i + 1) * 508, fileContent.length));
             System.arraycopy(aux, 0, messagesByte[i],0,aux.length);
             System.arraycopy(aux2, 0, messagesByte[i], aux.length, aux2.length);
+
         }
 
         return messagesByte;
+    }
+
+    public String getFileExtension(File f) {
+        String extension = "";
+        try {
+            if (f != null && f.exists()) {
+                String name = f.getName();
+                extension = name.substring(name.lastIndexOf("."));
+                extension = extension.substring(1);
+                if(extension.length() != 4){
+                    while(true){
+                        if(extension.length() != 4){
+                            extension = "0" + extension;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            extension = "";
+        }
+        return extension;
     }
 
     public void mountFile(File[] file_chunks) {
