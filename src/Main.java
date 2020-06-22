@@ -1,5 +1,8 @@
 package src;
 
+import src.core.Client;
+import src.core.FileHandler;
+
 public class Main {
 
     /*
@@ -7,7 +10,11 @@ public class Main {
      */
 
     public static void main(String[]args) {
-        System.out.println("Hello World!");
+
+        FileHandler c = new FileHandler();
+        byte[][] b = new byte[1][100];
+        b[0] = "0001teste".getBytes();
+        c.mountFile(b);
     }
 
 }

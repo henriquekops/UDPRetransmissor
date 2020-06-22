@@ -21,21 +21,21 @@ public class FileHandler {
 
 
     public File readFile(String filePath) {
-            f = new File(filePath);
-            return f;
+        f = new File(filePath);
+        return f;
     }
 
 
     public byte[][] breakFile(File f) throws IOException {
 
         String content = Files.readString(f.toPath(), StandardCharsets.US_ASCII);
-        int size = (int) Math.ceil(content.length() / 508.0);
+        int size = (int) Math.ceil(content.length() / 500.0);
         byte[][] messagesByte = new byte[size][512];
         byte[] fileContent = Files.readAllBytes(f.toPath());
         for (int i = 0; i < size; i++) {
-            byte[] aux = (String.format("%04d", i) + String.format("%04d", size) + (getFileExtension(f))).getBytes();
-            byte[] aux2 = Arrays.copyOfRange(fileContent,i * 508, Math.min((i + 1) * 508, fileContent.length));
-            System.arraycopy(aux, 0, messagesByte[i],0,aux.length);
+            byte[] aux = (String.format("%04d", i) + String.format("%04d", size) + (getFileExtension(f)) + "CRC00000").getBytes();
+            byte[] aux2 = Arrays.copyOfRange(fileContent, i * 500, Math.min((i + 1) * 500, fileContent.length));
+            System.arraycopy(aux, 0, messagesByte[i], 0, aux.length);
             System.arraycopy(aux2, 0, messagesByte[i], aux.length, aux2.length);
 
         }
@@ -50,9 +50,9 @@ public class FileHandler {
                 String name = f.getName();
                 extension = name.substring(name.lastIndexOf("."));
                 extension = extension.substring(1);
-                if(extension.length() != 4){
-                    while(true){
-                        if(extension.length() != 4){
+                if (extension.length() != 4) {
+                    while (true) {
+                        if (extension.length() != 4) {
                             extension = "0" + extension;
                         }
                     }
@@ -68,6 +68,15 @@ public class FileHandler {
         /*
         This method concatenates file chunks into a file
          */
+    }
+
+    public void mountFile(byte[][] messagesByte) {
+        byte[] msg = new byte[500 * messagesByte.length];
+        for (int i = 0; i < messagesByte.length; i++) {
+            byte[] aux = Arrays.copyOfRange(messagesByte[i], 0, 4);
+
+            System.out.println(new String(messagesByte[i]));
+        }
     }
 
     public void validateFile(File f) {
