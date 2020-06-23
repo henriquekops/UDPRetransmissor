@@ -1,5 +1,7 @@
 package src.core;
 
+import org.w3c.dom.ls.LSOutput;
+
 import java.io.*;
 import java.math.BigInteger;
 import java.net.*;
@@ -47,12 +49,12 @@ public class Server {
 
         while (!completed) {
             DatagramPacket packet = new DatagramPacket(this.buffer, this.buffer.length);
-
             try {
+                socket.setSoTimeout(50);
                 this.socket.receive(packet);
-                new Thread(() -> {
-                    this.handlePacket(packet);
-                }).start();
+                new Thread(() -> this.handlePacket(packet)).start();
+            } catch (SocketException error) {
+                System.out.println("50ms with no new packet");
             } catch (IOException error) {
                 System.out.println("An error occurred wile receiving file: " + error.getMessage());
             }
