@@ -81,14 +81,20 @@ public class Server {
                 this.confirmedPackets = new boolean[size];
                 this.ackCount = size;
             }
+
             if (this.lastAck + 1 == seqNumber) {
-                this.lastAck++;
+                for (int i = seqNumber + 1; i < confirmedPackets.length; i++) {
+                    if (!confirmedPackets[i]) {
+                        this.lastAck = i;
+                        break;
+                    }
+                }
             }
 
             this.ackCount -= this.confirmedPackets[seqNumber] ? 0 : 1;
             this.confirmedPackets[seqNumber] = true;
 
-            if (this.ackCount == 0) {
+            if (this.ackCount <= 0) {
                 this.extension = extension;
                 this.completed = true;
             }
