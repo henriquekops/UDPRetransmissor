@@ -1,47 +1,106 @@
 package src.core;
 
+import java.io.*;
+import java.net.*;
+import java.nio.ByteBuffer;
+import java.util.Scanner;
+
 public class Client {
     /*
-    This class implements application's client
+     * This class implements application's client
      */
+
+    private DatagramSocket socket;
+    private byte[] buffer;
+    private InetAddress hostIP;
+
+    private final int hostPort = 3000;
+    private final int bufferSize = 1024;
+    private final int maxRetries = 5;
 
     public Client() {
         /*
-        Constructor
+         * Constructor
          */
+
+        System.out.println("Starting client...");
+
+        try {
+            this.hostIP = InetAddress.getByName("localhost");
+            this.socket = new DatagramSocket();
+            this.buffer = new byte[this.bufferSize];
+        } catch (UnknownHostException error) {
+            System.out.println("Unknown host exception: " + error.getMessage());
+        } catch (SocketException error) {
+            System.out.println("An error occurred while building socket: " + error.getMessage());
+        }
     }
 
-    public void slowStart() {
+    public void interact() {
         /*
-        This method implements slow start technique
+         * This method reads a file path from cmd line And breaks it into datagrams
          */
+        Scanner cmdLine = new Scanner(System.in);
+        System.out.print("Input file path:\n> ");
+        String filePath = cmdLine.nextLine();
+
+        File f = new File(filePath);
+        FileHandler fh = new FileHandler();
+
+        try {
+            slowStart(fh.breakFile(f));
+        } catch (IOException e) {
+            System.out.println("Error: " + e);
+        }
+    }
+
+    public void slowStart(byte[][] datagrams) {
+        /*
+         * This method implements slow start technique
+         */
+
+        for (int i = 0; i < datagrams.length; i++) {
+            continue;
+        }
     }
 
     public void fastRetransmit() {
         /*
-        This method implements fast retransmit technique
+         * This method implements fast retransmit technique
          */
     }
 
-    public void timeoutControl() {
+    public int sendUntilAck(byte[] data, int waitTime) throws IOException {
         /*
-        This method implements timeout control
+         * This method implements timeout control
          */
-    }
-    
-    public byte[][] divideMessage(String message){
 
-        int size = (int) Math.ceil(message.length() / 508.0);
-        byte[][] messagesByte = new byte[size][512];
+        DatagramPacket getAck = new DatagramPacket(this.buffer, this.buffer.length);
+        DatagramPacket sendPacket = new DatagramPacket(data, data.length, this.hostIP, this.hostPort);
 
-        for (int i = 0; i < size; i++) {
-            String aux = String.format("%04d", i);
-            aux += message.substring(i * 508, Math.min((i + 1) * 508, message.length()));
+        int numTry = 1;
+        boolean receivedAck = false;
+        this.socket.setSoTimeout(waitTime);
 
-            byte[] arr = aux.getBytes();
-            System.arraycopy(arr, 0, messagesByte[0], 0, arr.length);
+        this.socket.send(sendPacket);
+
+        while ((numTry <= this.maxRetries) && (!receivedAck)) {
+            try {
+                this.socket.receive(getAck);
+                receivedAck = true;
+            } catch (SocketTimeoutException error) {
+                this.socket.send(sendPacket);
+                numTry++;
+                continue;
+            }
         }
 
-        return messagesByte;
+        if (numTry == this.maxRetries) {
+            return -1;
+        }
+        else {
+            ByteBuffer wrapper = ByteBuffer.wrap(getAck.getData());
+            return wrapper.getShort();
+        }
     }
 }
