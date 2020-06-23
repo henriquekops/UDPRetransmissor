@@ -13,6 +13,7 @@ public class Client {
     private DatagramSocket socket;
     private byte[] buffer;
     private InetAddress hostIP;
+    private int[] receivedAck;
 
     private final int hostPort = 3000;
     private final int bufferSize = 1024;
@@ -49,19 +50,64 @@ public class Client {
 
         try {
             slowStart(fh.breakFile(f));
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             System.out.println("Error: " + e);
         }
     }
 
-    public void slowStart(byte[][] datagrams) {
+    public void slowStart(byte[][] datagrams) throws InterruptedException {
         /*
          * This method implements slow start technique
          */
+        receivedAck = new int[datagrams.length];
+        int slowCount = -1;
+        int status = -1;
 
-        for (int i = 0; i < datagrams.length; i++) {
-            continue;
+        while (true) {
+
+            int[] packetsToSend;
+            if (status == -1) {
+                slowCount = slowCount == -1 ? 1 : slowCount * 2;
+                packetsToSend = getNextPackets(slowCount);
+            } else {
+                slowCount = 1;
+                packetsToSend = new int[]{status};
+                receivedAck[status] = 0;
+            }
+
+            if (packetsToSend == null) {
+                break;
+            }
+
+            for (int i : packetsToSend) {
+                try {
+                    sendUntilAck(datagrams[i], 50); //tem que rever
+                } catch (IOException error) {
+                    System.out.println("Error: " + error);
+                }
+            }
+
+            Thread.sleep(100);
+            status = receiveAck();
         }
+    }
+
+    public int receiveAck() {
+        return 0;
+    }
+
+    public int[] getNextPackets(int count) {
+        for (int i = 0; i < receivedAck.length; i++) {
+            if (receivedAck[i] == 0) {
+                int end = Math.min(count, receivedAck.length - i);
+                int[] aux = new int[end];
+                for (int j = 0; j < end; j++) {
+                    aux[j] = receivedAck[i + j];
+                }
+                return aux;
+            }
+        }
+        return null;
     }
 
     public void fastRetransmit() {
@@ -70,7 +116,8 @@ public class Client {
          */
     }
 
-    public int sendUntilAck(byte[] data, int waitTime) throws IOException {
+
+    public int sendUntilAck(byte[] data, int waitTime) throws IOException { //tem que mudar
         /*
          * This method implements timeout control
          */
@@ -97,8 +144,7 @@ public class Client {
 
         if (numTry == this.maxRetries) {
             return -1;
-        }
-        else {
+        } else {
             ByteBuffer wrapper = ByteBuffer.wrap(getAck.getData());
             return wrapper.getShort();
         }
