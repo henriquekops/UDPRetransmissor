@@ -73,8 +73,7 @@ public class FileHandler {
             if (f != null && f.exists()) {
                 String name = f.getName();
                 extension = name.substring(name.lastIndexOf(".") + 1);
-                extension = extension.substring(1);
-                if (extension.length() != 4) {
+                if (extension.length() < 4) {
                     while (true) {
                         if (extension.length() != 4) {
                             extension = "0" + extension;
@@ -82,10 +81,14 @@ public class FileHandler {
                             break;
                         }
                     }
+                } else {
+                    if(extension.length() > 4){
+                        throw new Exception();
+                    }
                 }
             }
         } catch (Exception e) {
-            extension = "";
+            extension = "0txt";
         }
         return extension;
     }
