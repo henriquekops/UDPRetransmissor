@@ -17,6 +17,7 @@ public class Server {
     private byte[] buffer;
     private byte[][] receivedData;
     private boolean[] confirmedPackets;
+    private int ackCount;
     private boolean completed;
     private String extension;
 
@@ -62,7 +63,7 @@ public class Server {
 
     public void handlePacket(DatagramPacket packet) {
         /*
-         * This method handles a received packet 
+         * This method handles a received packet
          * byte[] data = (4 bytes pos) + (4bytes tam) + (4 bytes extensao) + (8 bytes CRC) + (data + pading);
          */
 
@@ -75,14 +76,19 @@ public class Server {
 
         if (verifyCRC(data, crc)) {
             System.arraycopy(data, 20, this.receivedData[seqNumber], 0, data.length - 20);
-            if(seqNumber == 0){
+
+            if (seqNumber == 0) {
                 this.confirmedPackets = new boolean[size];
+                this.ackCount = size;
             }
-            this.confirmedPackets[seqNumber] = true;
             if (this.lastAck + 1 == seqNumber) {
-                this.lastAck = seqNumber;
+                this.lastAck++;
             }
-            if (seqNumber == size) {
+
+            this.ackCount -= this.confirmedPackets[seqNumber] ? 0 : 1;
+            this.confirmedPackets[seqNumber] = true;
+
+            if (this.ackCount == 0) {
                 this.extension = extension;
                 this.completed = true;
             }
@@ -98,9 +104,9 @@ public class Server {
         crc32.update(Arrays.copyOfRange(data, 20, data.length));
         long val = crc32.getValue();
 
-        long aux = bytesToLong(crc,0);
+        long aux = bytesToLong(crc, 0);
 
-        if(val == aux){
+        if (val == aux) {
             return true;
         }
 
