@@ -72,12 +72,14 @@ public class FileHandler {
         try {
             if (f != null && f.exists()) {
                 String name = f.getName();
-                extension = name.substring(name.lastIndexOf("."));
+                extension = name.substring(name.lastIndexOf(".") + 1);
                 extension = extension.substring(1);
                 if (extension.length() != 4) {
                     while (true) {
                         if (extension.length() != 4) {
                             extension = "0" + extension;
+                        }else {
+                            break;
                         }
                     }
                 }
@@ -94,6 +96,7 @@ public class FileHandler {
         for (int i = 0; i < fileParts.length; i++) {
             System.arraycopy(fileParts[i], 0, fileBytes, i * fileParts[i].length, fileParts[i].length);
         }
+        extension = extension.substring(extension.lastIndexOf("0") + 1);
         Path p = Paths.get("C:\\Arquivo." + extension);
         Files.write(p, fileBytes);
     }
