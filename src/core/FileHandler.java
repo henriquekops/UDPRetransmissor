@@ -77,12 +77,12 @@ public class FileHandler {
                     while (true) {
                         if (extension.length() != 4) {
                             extension = "0" + extension;
-                        }else {
+                        } else {
                             break;
                         }
                     }
                 } else {
-                    if(extension.length() > 4){
+                    if (extension.length() > 4) {
                         throw new Exception();
                     }
                 }
@@ -95,12 +95,24 @@ public class FileHandler {
 
     public void mountFile(byte[][] fileParts, String extension) throws IOException {
         /* This method concatenates file chunks into a file */
-        byte[] fileBytes = new byte[fileParts.length * fileParts[0].length];
-        for (int i = 0; i < fileParts.length; i++) {
+        int padding = 0;
+        for (int i = 0; i < fileParts[0].length; i++) {
+            if (fileParts[fileParts.length - 1][i] == 0) {
+                padding = i;
+                break;
+            }
+        }
+        byte[] fileBytes = new byte[(fileParts.length * fileParts[0].length) - (492 - padding)];
+        for (int i = 0; i < fileParts.length - 1; i++) {
             System.arraycopy(fileParts[i], 0, fileBytes, i * fileParts[i].length, fileParts[i].length);
         }
+
+        System.arraycopy(fileParts[fileParts.length - 1], 0, fileBytes,
+                (fileParts.length - 1) * fileParts[0].length, padding);
+
+
         extension = extension.substring(extension.lastIndexOf("0") + 1);
-        Path p = Paths.get("C:\\Arquivo." + extension);
+        Path p = Paths.get("output." + extension);
         Files.write(p, fileBytes);
     }
 

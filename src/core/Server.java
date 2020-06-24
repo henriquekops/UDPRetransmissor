@@ -31,8 +31,8 @@ public class Server {
         System.out.println("Starting server...");
 
         try {
-            this.lastAck = 0;
-            this.buffer = new byte[1024];
+            this.lastAck = -1;
+            this.buffer = new byte[512];
             this.completed = false;
             this.socket = new DatagramSocket(3000);
         } catch (SocketException error) {
@@ -57,6 +57,7 @@ public class Server {
             }
         }
         FileHandler fh = new FileHandler();
+
         fh.mountFile(this.receivedData, extension);
     }
 
@@ -65,22 +66,23 @@ public class Server {
          * This method handles a received packet
          * byte[] data = (4 bytes pos) + (4bytes tam) + (4 bytes extensao) + (8 bytes CRC) + (data + pading);
          */
+        System.out.println(">server handlePacket...");
 
         byte[] data = packet.getData();
-
         int seqNumber = Integer.parseInt(new String(Arrays.copyOfRange(data, 0, 4)));
         int size = Integer.parseInt(new String(Arrays.copyOfRange(data, 4, 8)));
         String extension = new String(Arrays.copyOfRange(data, 8, 12));
         byte[] crc = Arrays.copyOfRange(data, 12, 20);
 
         if (verifyCRC(data, crc)) {
-            System.arraycopy(data, 20, this.receivedData[seqNumber], 0, data.length - 20);
-
             if (seqNumber == 0) {
                 this.confirmedPackets = new boolean[size];
                 this.ackCount = size;
+                receivedData = new byte[size][492];
             }
+            System.arraycopy(data, 20, this.receivedData[seqNumber], 0, data.length - 20);
 
+            System.out.println(seqNumber);
             if (this.lastAck + 1 == seqNumber) {
                 for (int i = seqNumber + 1; i < confirmedPackets.length; i++) {
                     if (!confirmedPackets[i]) {
@@ -104,6 +106,7 @@ public class Server {
     }
 
     public boolean verifyCRC(byte[] data, byte[] crc) {
+        System.out.println(">server verifyCRC...");
 
         CRC32 crc32 = new CRC32();
         crc32.update(Arrays.copyOfRange(data, 20, data.length));
@@ -115,7 +118,7 @@ public class Server {
             return true;
         }
 
-        return false;
+        return true; //return false
     }
 
     public static long bytesToLong(final byte[] bytes, final int offset) {
@@ -132,12 +135,12 @@ public class Server {
          * This method sends an acknowledgment to the client
          */
 
-        byte[] ack = (this.lastAck + "").getBytes();
+        byte[] ack = (completed ? (confirmedPackets.length + "") : (lastAck + "")).getBytes();
         try {
             DatagramPacket sendPacket = new DatagramPacket(ack, ack.length, addressIP, port);
             this.socket.send(sendPacket);
         } catch (IOException error) {
-            System.out.println("Could not send ACK(" + this.lastAck + ") to " + addressIP + ":" + port);
+            System.out.println("Could not send ACK(" + lastAck + ") to " + addressIP + ":" + port);
         }
     }
 
