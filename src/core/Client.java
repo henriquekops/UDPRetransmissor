@@ -46,7 +46,7 @@ public class Client {
         System.out.print("Input file path:\n> test.txt\n");
         //String filePath = cmdLine.nextLine();
 
-        File f = new File("README.md");
+        File f = new File("test.txt");
         FileHandler fh = new FileHandler();
 
         try {
