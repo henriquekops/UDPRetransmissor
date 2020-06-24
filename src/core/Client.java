@@ -2,7 +2,6 @@ package src.core;
 
 import java.io.*;
 import java.net.*;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -16,10 +15,6 @@ public class Client {
     private InetAddress hostIP;
     private int[] receivedAck;
 
-    private final int hostPort = 3000;
-    private final int bufferSize = 1024;
-    private final int maxRetries = 5;
-
     public Client() {
         /*
          * Constructor
@@ -30,7 +25,8 @@ public class Client {
         try {
             this.hostIP = InetAddress.getByName("localhost");
             this.socket = new DatagramSocket();
-            this.buffer = new byte[this.bufferSize];
+            int bufferSize = 512;
+            this.buffer = new byte[bufferSize];
         } catch (UnknownHostException error) {
             System.out.println("Unknown host exception: " + error.getMessage());
         } catch (SocketException error) {
@@ -43,10 +39,10 @@ public class Client {
          * This method reads a file path from cmd line And breaks it into datagrams
          */
         Scanner cmdLine = new Scanner(System.in);
-        System.out.print("Input file path:\n> test.txt\n");
-        //String filePath = cmdLine.nextLine();
+        System.out.print("Input file path:\n> ");
+        String filePath = cmdLine.nextLine();
 
-        File f = new File("test.txt");
+        File f = new File(filePath);
         FileHandler fh = new FileHandler();
 
         try {
@@ -68,7 +64,7 @@ public class Client {
         while (true) {
             int[] packetsToSend;
             if (status == -1) {
-                slowCount = slowCount == -1 ? 1 : slowCount * 2;
+                slowCount = slowCount == -1 ? 1 : Math.min(slowCount * 2, 4096);
                 packetsToSend = getNextPackets(slowCount);
             } else {
                 slowCount = 1;
@@ -93,15 +89,15 @@ public class Client {
                 break;
             }
         }
-        System.out.println("terminado");
+        System.out.println("Upload completed!");
     }
 
     public int[] getNextPackets(int count) {
         System.out.println("getNextPackets...");
+
         for (int i = receivedAck.length - 1; i >= 0; i--) {
             if (receivedAck[i] != 0) {
                 i++;
-                System.out.println("POSICAO " + i);
                 int end = Math.min(count, receivedAck.length - i);
                 int[] aux = new int[end];
                 for (int j = 0; j < end; j++) {
@@ -115,10 +111,12 @@ public class Client {
 
     public int receiveAck() {
         System.out.println("receiveAck...");
+
         DatagramPacket getAck = new DatagramPacket(this.buffer, this.buffer.length);
 
         try {
             this.socket.setSoTimeout(100);
+
             while (true) {
                 this.socket.receive(getAck);
 
@@ -130,7 +128,6 @@ public class Client {
                 }
 
                 int ack = Integer.parseInt(new String(data));
-                System.out.println("ACK RECEBIDO " + ack);
                 receivedAck[ack - 1]++;
                 if (receivedAck.length == ack) {
                     return -2;
@@ -148,7 +145,9 @@ public class Client {
 
     public void sendData(byte[] data) throws IOException {
         System.out.println("sendData...");
-        DatagramPacket sendPacket = new DatagramPacket(data, data.length, this.hostIP, this.hostPort);
+
+        int hostPort = 3000;
+        DatagramPacket sendPacket = new DatagramPacket(data, data.length, this.hostIP, hostPort);
         this.socket.send(sendPacket);
     }
 }
