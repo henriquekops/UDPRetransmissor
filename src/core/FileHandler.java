@@ -41,7 +41,6 @@ public class FileHandler {
             System.arraycopy(aux, 0, messagesByte[i], 0, aux.length);
             System.arraycopy(aux2, 0, messagesByte[i], aux.length, aux2.length);
             System.arraycopy(aux3, 0, messagesByte[i], aux.length + aux2.length, aux3.length);
-
         }
 
         return messagesByte;
@@ -96,9 +95,9 @@ public class FileHandler {
     public void mountFile(byte[][] fileParts, String extension) throws IOException {
         /* This method concatenates file chunks into a file */
         int padding = 0;
-        for (int i = 0; i < fileParts[0].length; i++) {
-            if (fileParts[fileParts.length - 1][i] == 0) {
-                padding = i;
+        for (int i = fileParts[0].length - 1; i >= 0; i--) {
+            if (fileParts[fileParts.length - 1][i] != 0) {
+                padding = i + 1;
                 break;
             }
         }
@@ -107,9 +106,7 @@ public class FileHandler {
             System.arraycopy(fileParts[i], 0, fileBytes, i * fileParts[i].length, fileParts[i].length);
         }
 
-        System.arraycopy(fileParts[fileParts.length - 1], 0, fileBytes,
-                (fileParts.length - 1) * fileParts[0].length, padding);
-
+        System.arraycopy(fileParts[fileParts.length - 1], 0, fileBytes, (fileParts.length - 1) * fileParts[0].length, padding);
 
         extension = extension.substring(extension.lastIndexOf("0") + 1);
         Path p = Paths.get("output." + extension);
