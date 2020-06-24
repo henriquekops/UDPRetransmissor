@@ -29,7 +29,7 @@ public class FileHandler {
     // Divide o arq em pedacos dentro de um array de bytes
     public byte[][] breakFile(File f) throws IOException {
 
-        String content = Files.readString(f.toPath(), StandardCharsets.US_ASCII);
+        String content = Files.readString(f.toPath(), StandardCharsets.ISO_8859_1);
         int size = (int) Math.ceil(content.length() / 492.0);
         byte[][] messagesByte = new byte[size][512];
         byte[] fileContent = Files.readAllBytes(f.toPath());
