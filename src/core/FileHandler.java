@@ -17,16 +17,8 @@ public class FileHandler {
      */
 
     File f;
-    File[] file_chunks;
 
     public FileHandler() {
-        f = this.f;
-        file_chunks = this.file_chunks;
-    }
-
-    public File readFile(String filePath) {
-        f = new File(filePath);
-        return f;
     }
 
     // Divide o arq em pedacos dentro de um array de bytes
@@ -41,10 +33,10 @@ public class FileHandler {
             byte[] aux = (String.format("%04d", i) + String.format("%04d", size) + getFileExtension(f)).getBytes();
             byte[] aux3 = Arrays.copyOfRange(fileContent, i * 492, Math.min((i + 1) * 492, fileContent.length));
             byte[] aux2 = verifyCRC(aux3);
+
             System.arraycopy(aux, 0, messagesByte[i], 0, aux.length);
             System.arraycopy(aux2, 0, messagesByte[i], aux.length, aux2.length);
             System.arraycopy(aux3, 0, messagesByte[i], aux.length + aux2.length, aux3.length);
-
         }
 
         return messagesByte;
@@ -52,8 +44,14 @@ public class FileHandler {
 
     public byte[] verifyCRC(byte[] data) {
 
+        if (data.length != 492) {
+            byte[] aux = new byte[492];
+            System.arraycopy(data, 0, aux, 0, data.length);
+            data = aux;
+        }
+
         CRC32 crc32 = new CRC32();
-        crc32.update(Arrays.copyOfRange(data, 20, data.length));
+        crc32.update(data);
         long val = crc32.getValue();
 
         return longToBytes(val);
@@ -76,6 +74,7 @@ public class FileHandler {
             if (f != null && f.exists()) {
                 String name = f.getName();
                 extension = name.substring(name.lastIndexOf(".") + 1);
+
                 if (extension.length() < 4) {
                     while (true) {
                         if (extension.length() != 4) {
@@ -99,20 +98,19 @@ public class FileHandler {
     public void mountFile(byte[][] fileParts, String extension) throws IOException {
         /* This method concatenates file chunks into a file */
         int padding = 0;
-        for (int i = 0; i < fileParts[0].length; i++) {
-            if (fileParts[fileParts.length - 1][i] == 0) {
-                padding = i;
+        for (int i = fileParts[0].length - 1; i >= 0; i--) {
+            if (fileParts[fileParts.length - 1][i] != 0) {
+                padding = i + 1;
                 break;
             }
         }
+
         byte[] fileBytes = new byte[(fileParts.length * fileParts[0].length) - (492 - padding)];
         for (int i = 0; i < fileParts.length - 1; i++) {
             System.arraycopy(fileParts[i], 0, fileBytes, i * fileParts[i].length, fileParts[i].length);
         }
 
-        System.arraycopy(fileParts[fileParts.length - 1], 0, fileBytes,
-                (fileParts.length - 1) * fileParts[0].length, padding);
-
+        System.arraycopy(fileParts[fileParts.length - 1], 0, fileBytes, (fileParts.length - 1) * fileParts[0].length, padding);
 
         extension = extension.substring(extension.lastIndexOf("0") + 1);
         Path p = Paths.get("output." + extension);

@@ -1,11 +1,7 @@
 package src.core;
 
-import org.w3c.dom.ls.LSOutput;
-
 import java.io.*;
-import java.math.BigInteger;
 import java.net.*;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.zip.CRC32;
 
@@ -56,8 +52,8 @@ public class Server {
                 System.out.println("An error occurred wile receiving file: " + error.getMessage());
             }
         }
-        FileHandler fh = new FileHandler();
 
+        FileHandler fh = new FileHandler();
         fh.mountFile(this.receivedData, extension);
     }
 
@@ -80,9 +76,9 @@ public class Server {
                 this.ackCount = size;
                 receivedData = new byte[size][492];
             }
+
             System.arraycopy(data, 20, this.receivedData[seqNumber], 0, data.length - 20);
 
-            System.out.println(seqNumber);
             if (this.lastAck + 1 == seqNumber) {
                 for (int i = seqNumber + 1; i < confirmedPackets.length; i++) {
                     if (!confirmedPackets[i]) {
@@ -100,7 +96,7 @@ public class Server {
                 this.completed = true;
             }
         } else {
-            System.out.println("Error on CRC(" + crc + ") for seqNumber=" + seqNumber);
+            System.out.println("Error on CRC(" + Arrays.toString(crc) + ") for seqNumber=" + seqNumber);
         }
         this.sendAck(packet.getAddress(), packet.getPort());
     }
@@ -111,14 +107,9 @@ public class Server {
         CRC32 crc32 = new CRC32();
         crc32.update(Arrays.copyOfRange(data, 20, data.length));
         long val = crc32.getValue();
-
         long aux = bytesToLong(crc, 0);
 
-        if (val == aux) {
-            return true;
-        }
-
-        return true; //return false
+        return val == aux;
     }
 
     public static long bytesToLong(final byte[] bytes, final int offset) {
@@ -142,13 +133,5 @@ public class Server {
         } catch (IOException error) {
             System.out.println("Could not send ACK(" + lastAck + ") to " + addressIP + ":" + port);
         }
-    }
-
-    public int getLastAck() {
-        return lastAck;
-    }
-
-    public void setLastAck(int lastAck) {
-        this.lastAck = lastAck;
     }
 }
