@@ -12,8 +12,9 @@ public class Client {
 
     private DatagramSocket socket;
     private byte[] buffer;
-    private InetAddress hostIP;
     private int[] receivedAck;
+    private InetAddress hostIP;
+    private final int hostPort = 3000;
 
     public Client() {
         /*
@@ -25,8 +26,7 @@ public class Client {
         try {
             this.hostIP = InetAddress.getByName("localhost");
             this.socket = new DatagramSocket();
-            int bufferSize = 512;
-            this.buffer = new byte[bufferSize];
+            this.buffer = new byte[512];
         } catch (UnknownHostException error) {
             System.out.println("Unknown host exception: " + error.getMessage());
         } catch (SocketException error) {
@@ -38,9 +38,11 @@ public class Client {
         /*
          * This method reads a file path from cmd line And breaks it into datagrams
          */
+        
         Scanner cmdLine = new Scanner(System.in);
         System.out.print("Input file path:\n> ");
         String filePath = cmdLine.nextLine();
+        cmdLine.close();
 
         File f = new File(filePath);
         FileHandler fh = new FileHandler();
@@ -68,7 +70,7 @@ public class Client {
                 packetsToSend = getNextPackets(slowCount);
             } else {
                 slowCount = 1;
-                packetsToSend = new int[]{status};
+                packetsToSend = new int[] { status };
                 receivedAck[status] = 0;
             }
 
@@ -78,7 +80,8 @@ public class Client {
 
             for (int i : packetsToSend) {
                 try {
-                    sendData(datagrams[i]); //tem que rever
+                    sendData(datagrams[i]);
+                    System.out.println("sendData... " + i);
                 } catch (IOException error) {
                     System.out.println("Error: " + error);
                 }
@@ -86,6 +89,7 @@ public class Client {
 
             status = receiveAck();
             if (status == -2) {
+                endClient();
                 break;
             }
         }
@@ -106,7 +110,7 @@ public class Client {
                 return aux;
             }
         }
-        return receivedAck[0] == 0 ? new int[]{0} : null;
+        return receivedAck[0] == 0 ? new int[] { 0 } : null;
     }
 
     public int receiveAck() {
@@ -142,12 +146,23 @@ public class Client {
         return -1;
     }
 
-
     public void sendData(byte[] data) throws IOException {
         System.out.println("sendData...");
 
-        int hostPort = 3000;
-        DatagramPacket sendPacket = new DatagramPacket(data, data.length, this.hostIP, hostPort);
+        DatagramPacket sendPacket = new DatagramPacket(data, data.length, this.hostIP, this.hostPort);
         this.socket.send(sendPacket);
+    }
+
+    public void endClient() {
+        byte[] data = "end".getBytes();
+        DatagramPacket sendPacket = new DatagramPacket(data, data.length, this.hostIP, this.hostPort);
+        
+        try {
+            this.socket.send(sendPacket);
+        } catch (IOException e) {
+            System.out.println("Error " + e);
+        }
+        
+        socket.close();
     }
 }

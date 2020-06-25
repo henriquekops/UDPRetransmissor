@@ -26,6 +26,7 @@ public class FileHandler {
 
         String content = Files.readString(f.toPath(), StandardCharsets.ISO_8859_1);
         int size = (int) Math.ceil(content.length() / 492.0);
+        System.out.println(size);
         byte[][] messagesByte = new byte[size][512];
         byte[] fileContent = Files.readAllBytes(f.toPath());
 
@@ -117,23 +118,28 @@ public class FileHandler {
         Files.write(p, fileBytes);
     }
 
-    public void validateFile(File in, File out) throws NoSuchAlgorithmException, IOException {
+    public void validateFile(File in, File out) {
         /*
          * This method validates a file using shasum or md5sum
          */
 
-        //Use MD5 algorithm
-        MessageDigest md5Digest = MessageDigest.getInstance("MD5");
+        try {
+            //Use MD5 algorithm
+            MessageDigest md5Digest = MessageDigest.getInstance("MD5");
 
-        //Get the checksum
-        String checksumIn = getFileChecksum(md5Digest, in);
-        String checksumOut = getFileChecksum(md5Digest, out);
+            //Get the checksum
+            String checksumIn = getFileChecksum(md5Digest, in);
+            String checksumOut = getFileChecksum(md5Digest, out);
 
-        //see checksum
-        if(checksumIn.equals(checksumOut)){
-            System.out.println("Deu bom gurizada");
+            //see checksum
+            if (checksumIn.equals(checksumOut)) {
+                System.out.println("Arquivos iguais!");
+            } else {
+                System.out.println("Arquivos diferentes!");
+            }
+        } catch (NoSuchAlgorithmException | IOException e) {
+            System.out.println("Error: " + e);
         }
-
     }
 
     public String getFileChecksum(MessageDigest digest, File file) throws IOException {

@@ -3,6 +3,7 @@ package src.core;
 import java.io.*;
 import java.net.*;
 import java.util.Arrays;
+import java.util.concurrent.TimeoutException;
 import java.util.zip.CRC32;
 
 public class Server {
@@ -24,15 +25,15 @@ public class Server {
          * Constructor
          */
 
-        System.out.println("Starting server...");
+        this.log("Starting server...");
 
         try {
-            this.lastAck = -1;
+            this.lastAck = 0;
             this.buffer = new byte[512];
             this.completed = false;
             this.socket = new DatagramSocket(3000);
         } catch (SocketException error) {
-            System.out.println("An error occurred while starting server: " + error.getMessage());
+            this.log("An error occurred while starting server: " + error.getMessage());
         }
     }
 
@@ -41,28 +42,29 @@ public class Server {
          * This method receives a file from the client
          */
 
-        System.out.println("Listening...");
+        this.log("Listening...");
 
         while (!completed) {
             DatagramPacket packet = new DatagramPacket(this.buffer, this.buffer.length);
             try {
                 this.socket.receive(packet);
-                handlePacket(packet);
+                this.handlePacket(packet);
             } catch (IOException error) {
-                System.out.println("An error occurred wile receiving file: " + error.getMessage());
+                this.log("An error occurred wile receiving file: " + error.getMessage());
             }
         }
 
-        FileHandler fh = new FileHandler();
-        fh.mountFile(this.receivedData, extension);
+        this.log("File received!");
+        FileHandler fileHandler = new FileHandler();
+        fileHandler.mountFile(this.receivedData, extension);
     }
 
     public void handlePacket(DatagramPacket packet) {
         /*
-         * This method handles a received packet
-         * byte[] data = (4 bytes pos) + (4bytes tam) + (4 bytes extensao) + (8 bytes CRC) + (data + pading);
+         * This method handles a received packet byte[] data = (4 bytes pos) + (4bytes
+         * tam) + (4 bytes extensao) + (8 bytes CRC) + (data + pading);
          */
-        System.out.println(">server handlePacket...");
+        // System.out.println(">server handlePacket...");
 
         byte[] data = packet.getData();
         int seqNumber = Integer.parseInt(new String(Arrays.copyOfRange(data, 0, 4)));
@@ -70,6 +72,8 @@ public class Server {
         String extension = new String(Arrays.copyOfRange(data, 8, 12));
         byte[] crc = Arrays.copyOfRange(data, 12, 20);
 
+        System.out.println(">server recebi ack " + seqNumber);
+        System.out.println(">server last ack " + lastAck);
         if (verifyCRC(data, crc)) {
             if (seqNumber == 0) {
                 this.confirmedPackets = new boolean[size];
@@ -79,18 +83,17 @@ public class Server {
 
             System.arraycopy(data, 20, this.receivedData[seqNumber], 0, data.length - 20);
 
-            if (this.lastAck + 1 == seqNumber) {
-                for (int i = seqNumber + 1; i < confirmedPackets.length; i++) {
-                    if (!confirmedPackets[i]) {
-                        this.lastAck = i;
-                        break;
-                    }
-                }
-            }
-
             this.ackCount -= this.confirmedPackets[seqNumber] ? 0 : 1;
             this.confirmedPackets[seqNumber] = true;
 
+            for (int i = 0; i < confirmedPackets.length; i++) {
+                if (!confirmedPackets[i]) {
+                    this.lastAck = i;
+                    break;
+                }
+            }
+
+            System.out.println(">server ackcount " + ackCount);
             if (this.ackCount <= 0) {
                 this.extension = extension;
                 this.completed = true;
@@ -98,11 +101,11 @@ public class Server {
         } else {
             System.out.println("Error on CRC(" + Arrays.toString(crc) + ") for seqNumber=" + seqNumber);
         }
-        this.sendAck(packet.getAddress(), packet.getPort());
+        sendAck(packet.getAddress(), packet.getPort());
     }
 
     public boolean verifyCRC(byte[] data, byte[] crc) {
-        System.out.println(">server verifyCRC...");
+        // System.out.println(">server verifyCRC...");
 
         CRC32 crc32 = new CRC32();
         crc32.update(Arrays.copyOfRange(data, 20, data.length));
@@ -127,11 +130,50 @@ public class Server {
          */
 
         byte[] ack = (completed ? (confirmedPackets.length + "") : (lastAck + "")).getBytes();
+
         try {
             DatagramPacket sendPacket = new DatagramPacket(ack, ack.length, addressIP, port);
             this.socket.send(sendPacket);
         } catch (IOException error) {
-            System.out.println("Could not send ACK(" + lastAck + ") to " + addressIP + ":" + port);
+            this.log("Could not send ACK(" + lastAck + ") to " + addressIP + ":" + port);
         }
+
+        if (completed) {
+            endServer(addressIP, port);
+        }
+    }
+
+    public void endServer(InetAddress addressIP, int port) {
+        /*
+         * This method ends the connection
+         */
+
+        DatagramPacket getAck = new DatagramPacket(this.buffer, this.buffer.length);
+
+        try {
+            this.socket.setSoTimeout(300);
+            this.socket.receive(getAck);
+            String data = new String(getAck.getData());
+
+            if (data.equals("end")) {
+                socket.close();
+                return;
+            } else {
+                sendAck(addressIP, port);
+            }
+
+        } catch (IOException e) {
+            this.log("No acks received, exiting...");
+        }
+
+    }
+
+    public void log(String message) {
+        /*
+         * This method logs
+         */
+
+        System.out.print("[SERVER]: ");
+        System.out.println(message);
     }
 }
