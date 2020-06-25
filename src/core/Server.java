@@ -3,7 +3,6 @@ package src.core;
 import java.io.*;
 import java.net.*;
 import java.util.Arrays;
-import java.util.concurrent.TimeoutException;
 import java.util.zip.CRC32;
 
 public class Server {
@@ -157,7 +156,6 @@ public class Server {
 
             if (data.equals("end")) {
                 socket.close();
-                return;
             } else {
                 sendAck(addressIP, port);
             }

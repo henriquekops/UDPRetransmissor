@@ -14,7 +14,7 @@ public class ClientMain {
      * This class implements main application
      */
 
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+    public static void main(String[] args) {
         Client c = new Client();
         c.interact();
     }

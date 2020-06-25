@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
-import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -15,8 +14,6 @@ public class FileHandler {
     /*
      * This class implements application's file handler
      */
-
-    File f;
 
     public FileHandler() {
     }
@@ -148,13 +145,12 @@ public class FileHandler {
 
         //Create byte array to read data in chunks
         byte[] byteArray = new byte[1024];
-        int bytesCount = 0;
+        int bytesCount;
 
         //Read file data and update in message digest
         while ((bytesCount = fis.read(byteArray)) != -1) {
             digest.update(byteArray, 0, bytesCount);
         }
-        ;
 
         //close the stream; We don't need it now.
         fis.close();
@@ -165,8 +161,8 @@ public class FileHandler {
         //This bytes[] has bytes in decimal format;
         //Convert it to hexadecimal format
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < bytes.length; i++) {
-            sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
+        for (byte aByte : bytes) {
+            sb.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
         }
 
         //return complete hash
