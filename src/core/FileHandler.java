@@ -111,7 +111,7 @@ public class FileHandler {
         System.arraycopy(fileParts[fileParts.length - 1], 0, fileBytes, (fileParts.length - 1) * fileParts[0].length, padding);
 
         extension = extension.substring(extension.lastIndexOf("0") + 1);
-        Path p = Paths.get("output." + extension);
+        Path p = Paths.get("tmp/output." + extension);
         Files.write(p, fileBytes);
     }
 
