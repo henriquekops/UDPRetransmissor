@@ -60,10 +60,9 @@ public class Server {
 
     public void handlePacket(DatagramPacket packet) {
         /*
-         * This method handles a received packet byte[] data = (4 bytes pos) + (4bytes
-         * tam) + (4 bytes extensao) + (8 bytes CRC) + (data + pading);
+         * This method handles a received packet
+         * byte[] data = (4 bytes pos) + (4bytes tam) + (4 bytes ext) + (8 bytes CRC) + (data + padding);
          */
-        // System.out.println(">server handlePacket...");
 
         byte[] data = packet.getData();
         int seqNumber = Integer.parseInt(new String(Arrays.copyOfRange(data, 0, 4)));
@@ -71,13 +70,13 @@ public class Server {
         String extension = new String(Arrays.copyOfRange(data, 8, 12));
         byte[] crc = Arrays.copyOfRange(data, 12, 20);
 
-        System.out.println(">server recebi ack " + seqNumber);
-        System.out.println(">server last ack " + lastAck);
+        this.log("Ack received: " + seqNumber + " | Last ack: " + this.lastAck);
+
         if (verifyCRC(data, crc)) {
             if (seqNumber == 0) {
                 this.confirmedPackets = new boolean[size];
                 this.ackCount = size;
-                receivedData = new byte[size][492];
+                this.receivedData = new byte[size][492];
             }
 
             System.arraycopy(data, 20, this.receivedData[seqNumber], 0, data.length - 20);
@@ -92,19 +91,20 @@ public class Server {
                 }
             }
 
-            System.out.println(">server ackcount " + ackCount);
             if (this.ackCount <= 0) {
                 this.extension = extension;
                 this.completed = true;
             }
         } else {
-            System.out.println("Error on CRC(" + Arrays.toString(crc) + ") for seqNumber=" + seqNumber);
+            this.log("Error on CRC(" + Arrays.toString(crc) + ") for seqNumber=" + seqNumber);
         }
         sendAck(packet.getAddress(), packet.getPort());
     }
 
     public boolean verifyCRC(byte[] data, byte[] crc) {
-        // System.out.println(">server verifyCRC...");
+        /*
+         * This method verifies file equality through CRC
+         */
 
         CRC32 crc32 = new CRC32();
         crc32.update(Arrays.copyOfRange(data, 20, data.length));
@@ -115,6 +115,10 @@ public class Server {
     }
 
     public static long bytesToLong(final byte[] bytes, final int offset) {
+        /*
+         * This method converts a byte array to long integer
+         */
+
         long result = 0;
         for (int i = offset; i < Long.BYTES + offset; i++) {
             result <<= Long.BYTES;
@@ -147,6 +151,7 @@ public class Server {
          * This method ends the connection
          */
 
+        this.log("Closing established connections...");
         DatagramPacket getAck = new DatagramPacket(this.buffer, this.buffer.length);
 
         try {
@@ -160,18 +165,20 @@ public class Server {
                 sendAck(addressIP, port);
             }
 
-        } catch (IOException e) {
+        } catch (SocketException e) {
             this.log("No acks received, exiting...");
+        } catch (IOException e) {
+            this.log("Error while reading packet: " + e.getMessage());
         }
 
     }
 
     public void log(String message) {
         /*
-         * This method logs
+         * This method standardize logging style
          */
 
-        System.out.print("[SERVER]: ");
+        System.out.print("[SERVER] ");
         System.out.println(message);
     }
 }

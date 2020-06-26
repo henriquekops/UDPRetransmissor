@@ -11,6 +11,7 @@ public class ServerMain {
 
     public static void main(String[] args) {
         Scanner cmdLine = new Scanner(System.in);
+        FileHandler fh = new FileHandler();
         Server s = new Server();
 
         try {
@@ -26,9 +27,9 @@ public class ServerMain {
         String second = cmdLine.nextLine();
         cmdLine.close();
 
-        FileHandler fh = new FileHandler();
         File in = new File(first);
         File out = new File(second);
+
         fh.validateFile(in, out);
     }
 }
