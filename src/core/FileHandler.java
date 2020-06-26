@@ -94,7 +94,10 @@ public class FileHandler {
     }
 
     public void mountFile(byte[][] fileParts, String extension) throws IOException {
-        /* This method concatenates file chunks into a file */
+        /*
+         * This method concatenates file chunks into a file
+         */
+
         int padding = 0;
         for (int i = fileParts[0].length - 1; i >= 0; i--) {
             if (fileParts[fileParts.length - 1][i] != 0) {
@@ -113,11 +116,12 @@ public class FileHandler {
         extension = extension.substring(extension.lastIndexOf("0") + 1);
         Path p = Paths.get("tmp/output." + extension);
         Files.write(p, fileBytes);
+        this.log("File saved at " + p.toString());
     }
 
     public void validateFile(File in, File out) {
         /*
-         * This method validates a file using shasum or md5sum
+         * This method validates a file using MD5
          */
 
         try {
@@ -125,21 +129,21 @@ public class FileHandler {
             MessageDigest md5Digest = MessageDigest.getInstance("MD5");
 
             //Get the checksum
-            String checksumIn = getFileChecksum(md5Digest, in);
-            String checksumOut = getFileChecksum(md5Digest, out);
+            String checksumIn = this.getFileChecksum(md5Digest, in);
+            String checksumOut = this.getFileChecksum(md5Digest, out);
 
             //see checksum
             if (checksumIn.equals(checksumOut)) {
-                System.out.println("Arquivos iguais!");
+                this.log("Files are identic! :)");
             } else {
-                System.out.println("Arquivos diferentes!");
+                this.log("Files are different... :(");
             }
         } catch (NoSuchAlgorithmException | IOException e) {
-            System.out.println("Error: " + e);
+            this.log("Error: " + e);
         }
     }
 
-    public String getFileChecksum(MessageDigest digest, File file) throws IOException {
+    private String getFileChecksum(MessageDigest digest, File file) throws IOException {
         //Get file input stream for reading the file content
         FileInputStream fis = new FileInputStream(file);
 
@@ -168,4 +172,14 @@ public class FileHandler {
         //return complete hash
         return sb.toString();
     }
+
+    public void log(String message) {
+        /*
+         * This method standardize logging style
+         */
+
+        System.out.print("[FILE_HANDLER] ");
+        System.out.println(message);
+    }
+
 }
