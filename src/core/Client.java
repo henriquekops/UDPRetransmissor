@@ -135,6 +135,10 @@ public class Client {
     }
 
     public void sendData(byte[] data) throws IOException {
+        /*
+         * This method sends data to the server
+         */
+
         this.log("Sending data...");
 
         DatagramPacket sendPacket = new DatagramPacket(data, data.length, this.hostIP, this.hostPort);
@@ -142,6 +146,10 @@ public class Client {
     }
 
     public void endClient() {
+        /*
+         * This method warns the server about the end of connection
+         */
+
         byte[] data = "end".getBytes();
         DatagramPacket sendPacket = new DatagramPacket(data, data.length, this.hostIP, this.hostPort);
         
