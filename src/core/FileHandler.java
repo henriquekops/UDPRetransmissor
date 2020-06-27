@@ -29,9 +29,9 @@ public class FileHandler {
         byte[] fileContent = Files.readAllBytes(f.toPath());
 
         for (int i = 0; i < size; i++) {
-            byte[] aux = (String.format("%04d", i) + String.format("%04d", size) + getFileExtension(f)).getBytes();
+            byte[] aux = (String.format("%04d", i) + String.format("%04d", size) + this.getFileExtension(f)).getBytes();
             byte[] aux3 = Arrays.copyOfRange(fileContent, i * 492, Math.min((i + 1) * 492, fileContent.length));
-            byte[] aux2 = verifyCRC(aux3);
+            byte[] aux2 = createCRC(aux3);
 
             System.arraycopy(aux, 0, messagesByte[i], 0, aux.length);
             System.arraycopy(aux2, 0, messagesByte[i], aux.length, aux2.length);
@@ -41,9 +41,9 @@ public class FileHandler {
         return messagesByte;
     }
 
-    public byte[] verifyCRC(byte[] data) {
+    private byte[] createCRC(byte[] data) {
         /*
-         * This method verifies if data is corrupted using CRC algorithm
+         * This method creates a CRC value for file data
          */
 
         if (data.length != 492) {
@@ -56,10 +56,10 @@ public class FileHandler {
         crc32.update(data);
         long val = crc32.getValue();
 
-        return longToBytes(val);
+        return this.longToBytes(val);
     }
 
-    public static byte[] longToBytes(long l) {
+    private byte[] longToBytes(long l) {
         /*
          * This method casts a long integer to an array of bytes
          */

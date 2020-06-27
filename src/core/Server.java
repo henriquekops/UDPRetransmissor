@@ -102,9 +102,9 @@ public class Server {
         sendAck(packet.getAddress(), packet.getPort());
     }
 
-    public boolean verifyCRC(byte[] data, byte[] crc) {
+    private boolean verifyCRC(byte[] data, byte[] crc) {
         /*
-         * This method verifies file equality through CRC
+         * This method verifies data corruption through CRC
          */
 
         CRC32 crc32 = new CRC32();
