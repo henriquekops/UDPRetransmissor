@@ -38,12 +38,13 @@ public class Server {
 
     public void listen() throws IOException {
         /*
-         * This method receives a file from the client
+         * This method listens to client connections and
+         *  receives every file datagram to mount them
          */
 
         this.log("Listening...");
 
-        while (!completed) {
+        while (!this.completed) {
             DatagramPacket packet = new DatagramPacket(this.buffer, this.buffer.length);
             try {
                 this.socket.receive(packet);
