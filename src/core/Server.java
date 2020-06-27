@@ -59,7 +59,7 @@ public class Server {
         fileHandler.mountFile(this.receivedData, extension);
     }
 
-    public void handlePacket(DatagramPacket packet) {
+    private void handlePacket(DatagramPacket packet) {
         /*
          * This method handles a received packet
          * byte[] data = (4 bytes pos) + (4bytes tam) + (4 bytes ext) + (8 bytes CRC) + (data + padding);
@@ -73,7 +73,7 @@ public class Server {
 
         this.log("Ack received: " + seqNumber + " | Last ack: " + this.lastAck);
 
-        if (verifyCRC(data, crc)) {
+        if (this.verifyCRC(data, crc)) {
             if (seqNumber == 0) {
                 this.confirmedPackets = new boolean[size];
                 this.ackCount = size;
@@ -99,7 +99,7 @@ public class Server {
         } else {
             this.log("Error on CRC(" + Arrays.toString(crc) + ") for seqNumber=" + seqNumber);
         }
-        sendAck(packet.getAddress(), packet.getPort());
+        this.sendAck(packet.getAddress(), packet.getPort());
     }
 
     private boolean verifyCRC(byte[] data, byte[] crc) {
@@ -110,17 +110,18 @@ public class Server {
         CRC32 crc32 = new CRC32();
         crc32.update(Arrays.copyOfRange(data, 20, data.length));
         long val = crc32.getValue();
-        long aux = bytesToLong(crc, 0);
+        long aux = this.bytesToLong(crc);
 
         return val == aux;
     }
 
-    public static long bytesToLong(final byte[] bytes, final int offset) {
+    private long bytesToLong(final byte[] bytes) {
         /*
          * This method converts a byte array to long integer
          */
 
         long result = 0;
+        int offset = 0;
         for (int i = offset; i < Long.BYTES + offset; i++) {
             result <<= Long.BYTES;
             result |= (bytes[i] & 0xFF);
@@ -128,7 +129,7 @@ public class Server {
         return result;
     }
 
-    public void sendAck(InetAddress addressIP, int port) {
+    private void sendAck(InetAddress addressIP, int port) {
         /*
          * This method sends an acknowledgment to the client
          */
@@ -143,11 +144,11 @@ public class Server {
         }
 
         if (completed) {
-            endServer(addressIP, port);
+            this.endServer(addressIP, port);
         }
     }
 
-    public void endServer(InetAddress addressIP, int port) {
+    private void endServer(InetAddress addressIP, int port) {
         /*
          * This method ends the connection
          */
@@ -163,7 +164,7 @@ public class Server {
             if (data.equals("end")) {
                 socket.close();
             } else {
-                sendAck(addressIP, port);
+                this.sendAck(addressIP, port);
             }
 
         } catch (SocketException e) {
@@ -174,7 +175,7 @@ public class Server {
 
     }
 
-    public void log(String message) {
+    private void log(String message) {
         /*
          * This method standardize logging style
          */

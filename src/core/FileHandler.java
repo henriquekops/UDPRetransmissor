@@ -31,7 +31,7 @@ public class FileHandler {
         for (int i = 0; i < size; i++) {
             byte[] aux = (String.format("%04d", i) + String.format("%04d", size) + this.getFileExtension(f)).getBytes();
             byte[] aux3 = Arrays.copyOfRange(fileContent, i * 492, Math.min((i + 1) * 492, fileContent.length));
-            byte[] aux2 = createCRC(aux3);
+            byte[] aux2 = this.createCRC(aux3);
 
             System.arraycopy(aux, 0, messagesByte[i], 0, aux.length);
             System.arraycopy(aux2, 0, messagesByte[i], aux.length, aux2.length);
@@ -178,7 +178,7 @@ public class FileHandler {
         return sb.toString();
     }
 
-    public void log(String message) {
+    private void log(String message) {
         /*
          * This method standardize logging style
          */

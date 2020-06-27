@@ -40,7 +40,7 @@ public class Client {
 
         this.log("Slow start...");
 
-        receivedAck = new int[datagrams.length];
+        this.receivedAck = new int[datagrams.length];
         int slowCount = -1;
         int status = -1;
 
@@ -48,11 +48,11 @@ public class Client {
             int[] packetsToSend;
             if (status == -1) {
                 slowCount = slowCount == -1 ? 1 : Math.min(slowCount * 2, 4096);
-                packetsToSend = getNextPackets(slowCount);
+                packetsToSend = this.getNextPackets(slowCount);
             } else {
                 slowCount = 1;
                 packetsToSend = new int[] { status };
-                receivedAck[status] = 0;
+                this.receivedAck[status] = 0;
             }
 
             if (packetsToSend == null) {
@@ -61,31 +61,31 @@ public class Client {
 
             for (int i : packetsToSend) {
                 try {
-                    sendData(datagrams[i]);
+                    this.sendData(datagrams[i]);
                     this.log("Sending data " + i + "...");
                 } catch (IOException e) {
                     this.log("Error occurred while sending data: " + e.getMessage());
                 }
             }
 
-            status = receiveAck();
+            status = this.receiveAck();
             if (status == -2) {
-                endClient();
+                this.endClient();
                 break;
             }
         }
         this.log("Upload completed!");
     }
 
-    public int[] getNextPackets(int count) {
+    private int[] getNextPackets(int count) {
         /*
          * This method gets next packets to send to the server
          */
 
-        for (int i = receivedAck.length - 1; i >= 0; i--) {
-            if (receivedAck[i] != 0) {
+        for (int i = this.receivedAck.length - 1; i >= 0; i--) {
+            if (this.receivedAck[i] != 0) {
                 i++;
-                int end = Math.min(count, receivedAck.length - i);
+                int end = Math.min(count, this.receivedAck.length - i);
                 int[] aux = new int[end];
                 for (int j = 0; j < end; j++) {
                     aux[j] = i + j;
@@ -93,10 +93,10 @@ public class Client {
                 return aux;
             }
         }
-        return receivedAck[0] == 0 ? new int[] { 0 } : null;
+        return this.receivedAck[0] == 0 ? new int[] { 0 } : null;
     }
 
-    public int receiveAck() {
+    private int receiveAck() {
         /*
          * This method receives and interprets acknowledgements from the server
          */
@@ -117,12 +117,12 @@ public class Client {
                 }
 
                 int ack = Integer.parseInt(new String(data));
-                receivedAck[ack - 1]++;
+                this.receivedAck[ack - 1]++;
 
-                if (receivedAck.length == ack) {
+                if (this.receivedAck.length == ack) {
                     return -2;
                 }
-                if (receivedAck[ack - 1] == 3) {
+                if (this.receivedAck[ack - 1] == 3) {
                     return ack;
                 }
             }
@@ -134,7 +134,7 @@ public class Client {
         return -1;
     }
 
-    public void sendData(byte[] data) throws IOException {
+    private void sendData(byte[] data) throws IOException {
         /*
          * This method sends data to the server
          */
@@ -145,7 +145,7 @@ public class Client {
         this.socket.send(sendPacket);
     }
 
-    public void endClient() {
+    private void endClient() {
         /*
          * This method warns the server about the end of connection
          */
@@ -159,10 +159,10 @@ public class Client {
             this.log("Error while sending end packet " + e);
         }
         
-        socket.close();
+        this.socket.close();
     }
 
-    public void log(String message) {
+    private void log(String message) {
         /*
          * This method standardize logging style
          */
