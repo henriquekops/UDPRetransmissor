@@ -8,7 +8,7 @@ A UDP socket file transmitter developed at PUCRS.
 
 ![alt text](https://vestibulares2020.com/wp-content/uploads/2019/03/vestibular-pucrs-2020.png)
 
-###How to run
+### How to run
 
 First you need to compile using...
 
