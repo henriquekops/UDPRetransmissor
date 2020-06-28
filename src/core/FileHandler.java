@@ -18,19 +18,20 @@ public class FileHandler {
     public FileHandler() {
     }
 
-    // Divide o arq em pedacos dentro de um array de bytes
     public byte[][] breakFile(File f) throws IOException {
+        /*
+         * This method breaks a file as an array of arrays of bytes
+         */
 
         String content = Files.readString(f.toPath(), StandardCharsets.ISO_8859_1);
         int size = (int) Math.ceil(content.length() / 492.0);
-        System.out.println(size);
         byte[][] messagesByte = new byte[size][512];
         byte[] fileContent = Files.readAllBytes(f.toPath());
 
         for (int i = 0; i < size; i++) {
-            byte[] aux = (String.format("%04d", i) + String.format("%04d", size) + getFileExtension(f)).getBytes();
+            byte[] aux = (String.format("%04d", i) + String.format("%04d", size) + this.getFileExtension(f)).getBytes();
             byte[] aux3 = Arrays.copyOfRange(fileContent, i * 492, Math.min((i + 1) * 492, fileContent.length));
-            byte[] aux2 = verifyCRC(aux3);
+            byte[] aux2 = this.createCRC(aux3);
 
             System.arraycopy(aux, 0, messagesByte[i], 0, aux.length);
             System.arraycopy(aux2, 0, messagesByte[i], aux.length, aux2.length);
@@ -40,7 +41,10 @@ public class FileHandler {
         return messagesByte;
     }
 
-    public byte[] verifyCRC(byte[] data) {
+    private byte[] createCRC(byte[] data) {
+        /*
+         * This method creates a CRC value for file data
+         */
 
         if (data.length != 492) {
             byte[] aux = new byte[492];
@@ -52,10 +56,14 @@ public class FileHandler {
         crc32.update(data);
         long val = crc32.getValue();
 
-        return longToBytes(val);
+        return this.longToBytes(val);
     }
 
-    public static byte[] longToBytes(long l) {
+    private byte[] longToBytes(long l) {
+        /*
+         * This method casts a long integer to an array of bytes
+         */
+
         byte[] result = new byte[8];
         for (int i = 7; i >= 0; i--) {
             result[i] = (byte) (l & 0xFF);
@@ -64,9 +72,12 @@ public class FileHandler {
         return result;
     }
 
-    // Metodo de extracao da extensao de um arquivo(com no maximo 4 chars),
-    // utilizado exclusivamente por breakFile para guardar no array criado
-    public String getFileExtension(File f) {
+    private String getFileExtension(File f) {
+        /*
+         * This method extracts the file extension (maximum 4 chars)
+         * and stores it inside breakFile's byte array
+         */
+
         String extension = "";
         try {
             if (f != null && f.exists()) {
@@ -94,7 +105,10 @@ public class FileHandler {
     }
 
     public void mountFile(byte[][] fileParts, String extension) throws IOException {
-        /* This method concatenates file chunks into a file */
+        /*
+         * This method concatenates file chunks into a file
+         */
+
         int padding = 0;
         for (int i = fileParts[0].length - 1; i >= 0; i--) {
             if (fileParts[fileParts.length - 1][i] != 0) {
@@ -111,61 +125,66 @@ public class FileHandler {
         System.arraycopy(fileParts[fileParts.length - 1], 0, fileBytes, (fileParts.length - 1) * fileParts[0].length, padding);
 
         extension = extension.substring(extension.lastIndexOf("0") + 1);
-        Path p = Paths.get("output." + extension);
+        Path p = Paths.get("tmp/output." + extension);
         Files.write(p, fileBytes);
+        this.log("File saved at " + p.toString());
     }
 
     public void validateFile(File in, File out) {
         /*
-         * This method validates a file using shasum or md5sum
+         * This method validates a file using MD5
          */
 
         try {
-            //Use MD5 algorithm
             MessageDigest md5Digest = MessageDigest.getInstance("MD5");
 
-            //Get the checksum
-            String checksumIn = getFileChecksum(md5Digest, in);
-            String checksumOut = getFileChecksum(md5Digest, out);
+            String checksumIn = this.getFileChecksum(md5Digest, in);
+            String checksumOut = this.getFileChecksum(md5Digest, out);
 
-            //see checksum
             if (checksumIn.equals(checksumOut)) {
-                System.out.println("Arquivos iguais!");
+                this.log("Files are identic! :)");
             } else {
-                System.out.println("Arquivos diferentes!");
+                this.log("Files are different... :(");
             }
         } catch (NoSuchAlgorithmException | IOException e) {
-            System.out.println("Error: " + e);
+            this.log("Error: " + e);
         }
     }
 
-    public String getFileChecksum(MessageDigest digest, File file) throws IOException {
-        //Get file input stream for reading the file content
+    private String getFileChecksum(MessageDigest digest, File file) throws IOException {
+        /*
+         * This method generates a hash over file's byte array
+         * for checksum calculation
+         */
+
         FileInputStream fis = new FileInputStream(file);
 
-        //Create byte array to read data in chunks
         byte[] byteArray = new byte[1024];
         int bytesCount;
 
-        //Read file data and update in message digest
         while ((bytesCount = fis.read(byteArray)) != -1) {
             digest.update(byteArray, 0, bytesCount);
         }
 
-        //close the stream; We don't need it now.
         fis.close();
 
-        //Get the hash's bytes
         byte[] bytes = digest.digest();
 
-        //This bytes[] has bytes in decimal format;
-        //Convert it to hexadecimal format
         StringBuilder sb = new StringBuilder();
         for (byte aByte : bytes) {
             sb.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
         }
 
-        //return complete hash
         return sb.toString();
     }
+
+    private void log(String message) {
+        /*
+         * This method standardize logging style
+         */
+
+        System.out.print("[FILE_HANDLER] ");
+        System.out.println(message);
+    }
+
 }

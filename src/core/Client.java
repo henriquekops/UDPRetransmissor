@@ -3,7 +3,6 @@ package src.core;
 import java.io.*;
 import java.net.*;
 import java.util.Arrays;
-import java.util.Scanner;
 
 public class Client {
     /*
@@ -21,36 +20,16 @@ public class Client {
          * Constructor
          */
 
-        System.out.println("Starting client...");
+        this.log("Starting client...");
 
         try {
             this.hostIP = InetAddress.getByName("localhost");
             this.socket = new DatagramSocket();
             this.buffer = new byte[512];
         } catch (UnknownHostException error) {
-            System.out.println("Unknown host exception: " + error.getMessage());
+            this.log("Unknown host exception: " + error.getMessage());
         } catch (SocketException error) {
-            System.out.println("An error occurred while building socket: " + error.getMessage());
-        }
-    }
-
-    public void interact() {
-        /*
-         * This method reads a file path from cmd line And breaks it into datagrams
-         */
-        
-        Scanner cmdLine = new Scanner(System.in);
-        System.out.print("Input file path:\n> ");
-        String filePath = cmdLine.nextLine();
-        cmdLine.close();
-
-        File f = new File(filePath);
-        FileHandler fh = new FileHandler();
-
-        try {
-            slowStart(fh.breakFile(f));
-        } catch (IOException e) {
-            System.out.println("Error: " + e);
+            this.log("An error occurred while building socket: " + error.getMessage());
         }
     }
 
@@ -58,8 +37,10 @@ public class Client {
         /*
          * This method implements slow start technique
          */
-        System.out.println("Slow start...");
-        receivedAck = new int[datagrams.length];
+
+        this.log("Slow start...");
+
+        this.receivedAck = new int[datagrams.length];
         int slowCount = -1;
         int status = -1;
 
@@ -67,11 +48,11 @@ public class Client {
             int[] packetsToSend;
             if (status == -1) {
                 slowCount = slowCount == -1 ? 1 : Math.min(slowCount * 2, 4096);
-                packetsToSend = getNextPackets(slowCount);
+                packetsToSend = this.getNextPackets(slowCount);
             } else {
                 slowCount = 1;
                 packetsToSend = new int[] { status };
-                receivedAck[status] = 0;
+                this.receivedAck[status] = 0;
             }
 
             if (packetsToSend == null) {
@@ -80,29 +61,31 @@ public class Client {
 
             for (int i : packetsToSend) {
                 try {
-                    sendData(datagrams[i]);
-                    System.out.println("sendData... " + i);
-                } catch (IOException error) {
-                    System.out.println("Error: " + error);
+                    this.sendData(datagrams[i]);
+                    this.log("Sending data " + i + "...");
+                } catch (IOException e) {
+                    this.log("Error occurred while sending data: " + e.getMessage());
                 }
             }
 
-            status = receiveAck();
+            status = this.receiveAck();
             if (status == -2) {
-                endClient();
+                this.endClient();
                 break;
             }
         }
-        System.out.println("Upload completed!");
+        this.log("Upload completed!");
     }
 
-    public int[] getNextPackets(int count) {
-        System.out.println("getNextPackets...");
+    private int[] getNextPackets(int count) {
+        /*
+         * This method gets next packets to send to the server
+         */
 
-        for (int i = receivedAck.length - 1; i >= 0; i--) {
-            if (receivedAck[i] != 0) {
+        for (int i = this.receivedAck.length - 1; i >= 0; i--) {
+            if (this.receivedAck[i] != 0) {
                 i++;
-                int end = Math.min(count, receivedAck.length - i);
+                int end = Math.min(count, this.receivedAck.length - i);
                 int[] aux = new int[end];
                 for (int j = 0; j < end; j++) {
                     aux[j] = i + j;
@@ -110,11 +93,13 @@ public class Client {
                 return aux;
             }
         }
-        return receivedAck[0] == 0 ? new int[] { 0 } : null;
+        return this.receivedAck[0] == 0 ? new int[] { 0 } : null;
     }
 
-    public int receiveAck() {
-        System.out.println("receiveAck...");
+    private int receiveAck() {
+        /*
+         * This method receives and interprets acknowledgements from the server
+         */
 
         DatagramPacket getAck = new DatagramPacket(this.buffer, this.buffer.length);
 
@@ -132,37 +117,57 @@ public class Client {
                 }
 
                 int ack = Integer.parseInt(new String(data));
-                receivedAck[ack - 1]++;
-                if (receivedAck.length == ack) {
+                this.receivedAck[ack - 1]++;
+
+                if (this.receivedAck.length == ack) {
                     return -2;
                 }
-                if (receivedAck[ack - 1] == 3) {
+                if (this.receivedAck[ack - 1] == 3) {
                     return ack;
                 }
             }
+        } catch (SocketException e) {
+            this.log("Connection with server timed out, not receiving packets...");
         } catch (IOException e) {
-            System.out.println("End receive acks");
+            this.log("Error while receiving packets: " + e.getMessage());
         }
         return -1;
     }
 
-    public void sendData(byte[] data) throws IOException {
-        System.out.println("sendData...");
+    private void sendData(byte[] data) throws IOException {
+        /*
+         * This method sends data to the server
+         */
+
+        this.log("Sending data...");
 
         DatagramPacket sendPacket = new DatagramPacket(data, data.length, this.hostIP, this.hostPort);
         this.socket.send(sendPacket);
     }
 
-    public void endClient() {
+    private void endClient() {
+        /*
+         * This method warns the server about the end of connection
+         */
+
         byte[] data = "end".getBytes();
         DatagramPacket sendPacket = new DatagramPacket(data, data.length, this.hostIP, this.hostPort);
         
         try {
             this.socket.send(sendPacket);
         } catch (IOException e) {
-            System.out.println("Error " + e);
+            this.log("Error while sending end packet " + e);
         }
         
-        socket.close();
+        this.socket.close();
+    }
+
+    private void log(String message) {
+        /*
+         * This method standardize logging style
+         */
+
+        System.out.print("[CLIENTE] ");
+        System.out.println(message);
     }
 }
