@@ -1,4 +1,4 @@
-![](https://img.shields.io/badge/Status-Estacionado-red) 
+![](https://img.shields.io/badge/Status-Voando-brightgreen) 
 ![](https://img.shields.io/badge/Release-1.0-blue)
 
 
