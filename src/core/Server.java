@@ -73,7 +73,7 @@ public class Server {
         String extension = new String(Arrays.copyOfRange(data, 8, 12));
         byte[] crc = Arrays.copyOfRange(data, 12, 20);
 
-        this.log("Ack received: " + seqNumber + " | Last ack: " + this.lastAck);
+        this.log("Ack received: " + seqNumber);
 
         if (this.verifyCRC(data, crc)) {
             if (!this.isFirst) {
@@ -141,6 +141,7 @@ public class Server {
 
         try {
             DatagramPacket sendPacket = new DatagramPacket(ack, ack.length, addressIP, port);
+            this.log("Sending ack: " + lastAck);
             this.socket.send(sendPacket);
         } catch (IOException error) {
             this.log("Could not send ACK(" + lastAck + ") to " + addressIP + ":" + port);
@@ -160,7 +161,7 @@ public class Server {
         DatagramPacket getAck = new DatagramPacket(this.buffer, this.buffer.length);
 
         try {
-            this.socket.setSoTimeout(300);
+            this.socket.setSoTimeout(3000);
             this.socket.receive(getAck);
             String data = new String(getAck.getData());
             if ("end".equals(data.substring(0,3))) {

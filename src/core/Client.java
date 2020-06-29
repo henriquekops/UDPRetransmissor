@@ -12,6 +12,7 @@ public class Client {
     private DatagramSocket socket;
     private byte[] buffer;
     private int[] receivedAck;
+    private boolean received;
     private InetAddress hostIP;
     private final int hostPort = 3000;
 
@@ -58,7 +59,7 @@ public class Client {
             if (packetsToSend == null) {
                 break;
             }
-
+            this.log("SlowCount: " + slowCount);
             for (int i : packetsToSend) {
                 try {
                     this.sendData(datagrams[i]);
@@ -69,6 +70,11 @@ public class Client {
             }
 
             status = this.receiveAck();
+            if (!received) {
+                slowCount = -1;
+                this.log("Timeout! 0 acks received" + status + " " + slowCount);
+            }
+
             if (status == -2) {
                 this.endClient();
                 break;
@@ -103,13 +109,15 @@ public class Client {
 
         DatagramPacket getAck = new DatagramPacket(this.buffer, this.buffer.length);
         boolean retransmit = false;
+        this.received = false;
         int nextAck = -1;
 
         try {
-            this.socket.setSoTimeout(100);
 
+            this.socket.setSoTimeout(500);
             while (true) {
                 this.socket.receive(getAck);
+                this.received = true;
 
                 byte[] data = getAck.getData();
                 for (int i = 0; i < data.length; i++) {
@@ -119,6 +127,7 @@ public class Client {
                 }
 
                 int ack = Integer.parseInt(new String(data));
+                this.log("Ack received: " + ack);
                 this.receivedAck[ack - 1]++;
 
                 if (this.receivedAck.length == ack) {
@@ -129,10 +138,8 @@ public class Client {
                     retransmit = true;
                 }
             }
-        } catch (SocketException e) {
-            this.log("Connection with server timed out, not receiving packets...");
         } catch (IOException e) {
-            this.log("Error while receiving packets: " + e.getMessage());
+            this.log("Acks received, preparing next packets...");
         }
 
         if (retransmit) {
@@ -145,8 +152,6 @@ public class Client {
         /*
          * This method sends data to the server
          */
-
-        this.log("Sending data...");
 
         DatagramPacket sendPacket = new DatagramPacket(data, data.length, this.hostIP, this.hostPort);
         this.socket.send(sendPacket);
