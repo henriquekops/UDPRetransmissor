@@ -51,7 +51,7 @@ public class Client {
                 packetsToSend = this.getNextPackets(slowCount);
             } else {
                 slowCount = 1;
-                packetsToSend = new int[] { status };
+                packetsToSend = new int[]{status};
                 this.receivedAck[status] = 0;
             }
 
@@ -93,7 +93,7 @@ public class Client {
                 return aux;
             }
         }
-        return this.receivedAck[0] == 0 ? new int[] { 0 } : null;
+        return this.receivedAck[0] == 0 ? new int[]{0} : null;
     }
 
     private int receiveAck() {
@@ -102,6 +102,8 @@ public class Client {
          */
 
         DatagramPacket getAck = new DatagramPacket(this.buffer, this.buffer.length);
+        boolean retransmit = false;
+        int nextAck = -1;
 
         try {
             this.socket.setSoTimeout(100);
@@ -122,8 +124,9 @@ public class Client {
                 if (this.receivedAck.length == ack) {
                     return -2;
                 }
-                if (this.receivedAck[ack - 1] == 3) {
-                    return ack;
+                if (this.receivedAck[ack - 1] == 3 && !retransmit) {
+                    nextAck = ack;
+                    retransmit = true;
                 }
             }
         } catch (SocketException e) {
@@ -131,7 +134,11 @@ public class Client {
         } catch (IOException e) {
             this.log("Error while receiving packets: " + e.getMessage());
         }
-        return -1;
+
+        if (retransmit) {
+            this.log("Retransmitting " + nextAck);
+        }
+        return nextAck;
     }
 
     private void sendData(byte[] data) throws IOException {
@@ -152,13 +159,13 @@ public class Client {
 
         byte[] data = "end".getBytes();
         DatagramPacket sendPacket = new DatagramPacket(data, data.length, this.hostIP, this.hostPort);
-        
+
         try {
             this.socket.send(sendPacket);
         } catch (IOException e) {
             this.log("Error while sending end packet " + e);
         }
-        
+
         this.socket.close();
     }
 

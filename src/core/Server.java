@@ -163,8 +163,8 @@ public class Server {
             this.socket.setSoTimeout(300);
             this.socket.receive(getAck);
             String data = new String(getAck.getData());
-
-            if (data.equals("end")) {
+            if ("end".equals(data.substring(0,3))) {
+                this.log("Cliente encerrado!");
                 socket.close();
             } else {
                 this.sendAck(addressIP, port);
