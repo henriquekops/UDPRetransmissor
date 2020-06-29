@@ -17,6 +17,7 @@ public class Server {
     private boolean[] confirmedPackets;
     private int ackCount;
     private boolean completed;
+    private boolean isFirst;
     private String extension;
 
     public Server() {
@@ -28,6 +29,7 @@ public class Server {
 
         try {
             this.lastAck = 0;
+            this.isFirst = false;
             this.buffer = new byte[512];
             this.completed = false;
             this.socket = new DatagramSocket(3000);
@@ -74,10 +76,11 @@ public class Server {
         this.log("Ack received: " + seqNumber + " | Last ack: " + this.lastAck);
 
         if (this.verifyCRC(data, crc)) {
-            if (seqNumber == 0) {
+            if (!this.isFirst) {
                 this.confirmedPackets = new boolean[size];
                 this.ackCount = size;
                 this.receivedData = new byte[size][492];
+                this.isFirst = true;
             }
 
             System.arraycopy(data, 20, this.receivedData[seqNumber], 0, data.length - 20);
